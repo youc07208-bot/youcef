@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>متصفح الويب - GitHub</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --panel: #121216;
+      --panel-2: #1b1b22;
+      --border: #272730;
+      --text: #f4f4f6;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* شريط الألسنة */
+    .tabs-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px 0;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel-2);
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 10px 10px 0 0;
+      font-size: 13px;
+      cursor: pointer;
+      min-width: 130px;
+      max-width: 210px;
+      border: 1px solid transparent;
+      border-bottom: none;
+    }
+    .tab.active {
+      background: var(--bg);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .tab-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .close-tab {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .close-tab:hover { color: #ef4444; }
+    .new-tab-btn {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* شريط العنوان والأدوات */
+    .nav-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .nav-btn:hover { border-color: var(--accent); }
+    .url-form {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      gap: 6px;
+    }
+    .url-input {
+      flex: 1;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    .url-input:focus { border-color: var(--accent); }
+    .go-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 8px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* شريط الإشارات المرجعية */
+    .bookmarks-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #0e0e12;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .bookmark-chip {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .bookmark-chip:hover { border-color: var(--accent); }
+
+    /* منطقة العرض */
+    .viewport {
+      flex: 1;
+      position: relative;
+      background: var(--bg);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+    }
+    .notice {
+      padding: 8px 12px;
+      background: #14141c;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .notice a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <div class="tabs-bar" id="tabsBar">
+    <button class="new-tab-btn" id="newTabBtn" title="لسان جديد">+</button>
+  </div>
+
+  <div class="nav-bar">
+    <button class="nav-btn" id="backBtn" title="رجوع">→</button>
+    <button class="nav-btn" id="forwardBtn" title="تقدّم">←</button>
+    <button class="nav-btn" id="reloadBtn" title="تحديث">↻</button>
+    <button class="nav-btn" id="homeBtn" title="الرئيسية">🏠</button>
+
+    <form class="url-form" id="urlForm">
+      <input type="text" class="url-input" id="urlInput" placeholder="اكتب رابطاً (https://...) أو كلمة للبحث..." />
+      <button type="submit" class="go-btn">اذهب</button>
+    </form>
+
+    <button class="nav-btn" id="addBookmarkBtn" title="حفظ في المفضلة">⭐</button>
+  </div>
+
+  <div class="bookmarks-bar" id="bookmarksBar"></div>
+
+  <div class="viewport">
+    <iframe id="browserFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+  </div>
+
+  <div class="notice">
+    <span id="statusText">جاهز للتصفح</span>
+    <span id="externalLinkWrap"></span>
+  </div>
+
+  <script>
+    const defaultBookmarks = [
+      { title: "DuckDuckGo", url: "https://duckduckgo.com/" },
+      { title: "Wikipedia", url: "https://ar.wikipedia.org/" },
+      { title: "MDN Web Docs", url: "https://developer.mozilla.org/" }
+    ];
+
+    let bookmarks = JSON.parse(localStorage.getItem("gh_browser_bookmarks")) || defaultBookmarks;
+    let tabs = [];
+    let activeTabId = null;
+
+    const tabsBar = document.getElementById("tabsBar");
+    const newTabBtn = document.getElementById("newTabBtn");
+    const urlForm = document.getElementById("urlForm");
+    const urlInput = document.getElementById("urlInput");
+    const browserFrame = document.getElementById("browserFrame");
+    const bookmarksBar = document.getElementById("bookmarksBar");
+    const statusText = document.getElementById("statusText");
+    const externalLinkWrap = document.getElementById("externalLinkWrap");
+
+    function normalizeInput(raw) {
+      const val = raw.trim();
+      if (!val) return "https://duckduckgo.com/";
+      if (/^https?:\/\//i.test(val)) return val;
+      if (/^[\w-]+(\.[\w-]+)+/.test(val) && !val.includes(" ")) {
+        return "https://" + val;
+      }
+      return "https://duckduckgo.com/?q=" + encodeURIComponent(val);
+    }
+
+    function createStartHtml(title = "صفحة جديدة") {
+      return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>
+        body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        background:#0b0b0f;color:#f4f4f6;font-family:system-ui,sans-serif;text-align:center;padding:20px;}
+        h1{margin-bottom:8px;font-size:26px;}
+        p{color:#9ca3af;max-width:460px;line-height:1.6;font-size:14px;}
+      </style></head><body>
+        <h1>${title}</h1>
+        <p>اكتب رابط موقع أو عبارة بحث في شريط العنوان بالأعلى للبدء. ملاحظة: بعض المواقع تمنع العرض داخل إطار مدمج (iframe)، ويمكن فتحها في تبويب مستقل عند الحاجة.</p>
+      </body></html>`;
+    }
+
+    function getActiveTab() {
+      return tabs.find(t => t.id === activeTabId);
+    }
+
+    function renderTabs() {
+      [...tabsBar.querySelectorAll(".tab")].forEach(el => el.remove());
+      tabs.forEach(tab => {
+        const el = document.createElement("div");
+        el.className = "tab" + (tab.id === activeTabId ? " active" : "");
+        el.innerHTML = `
+          <span class="tab-title">${tab.title || "تبويب جديد"}</span>
+          <button class="close-tab" title="إغلاق">✕</button>
+        `;
+        el.onclick = () => switchTab(tab.id);
+        el.querySelector(".close-tab").onclick = (e) => {
+          e.stopPropagation();
+          closeTab(tab.id);
+        };
+        tabsBar.insertBefore(el, newTabBtn);
+      });
+    }
+
+    function renderBookmarks() {
+      bookmarksBar.innerHTML = "";
+      bookmarks.forEach(bm => {
+        const chip = document.createElement("button");
+        chip.className = "bookmark-chip";
+        chip.textContent = bm.title;
+        chip.onclick = () => navigateTo(bm.url);
+        bookmarksBar.appendChild(chip);
+      });
+    }
+
+    function switchTab(id) {
+      activeTabId = id;
+      const tab = getActiveTab();
+      if (!tab) return;
+      urlInput.value = tab.currentUrl || "";
+      renderTabs();
+      loadTabContent(tab);
+    }
+
+    function loadTabContent(tab) {
+      if (!tab.currentUrl) {
+        browserFrame.srcdoc = createStartHtml(tab.title);
+        statusText.textContent = "صفحة البداية";
+        externalLinkWrap.innerHTML = "";
+      } else {
+        browserFrame.removeAttribute("srcdoc");
+        browserFrame.src = tab.currentUrl;
+        statusText.textContent = "جاري تحميل: " + tab.currentUrl;
+        externalLinkWrap.innerHTML = `<a href="${tab.currentUrl}" target="_blank" rel="noopener">فتح في نافذة مستقلة ↗</a>`;
+      }
+    }
+
+    function navigateTo(rawUrl) {
+      const tab = getActiveTab();
+      if (!tab) return;
+      const finalUrl = normalizeInput(rawUrl);
+      if (tab.currentUrl !== finalUrl) {
+        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+        tab.history.push(finalUrl);
+        tab.historyIndex = tab.history.length - 1;
+      }
+      tab.currentUrl = finalUrl;
+      tab.title = new URL(finalUrl).hostname;
+      urlInput.value = finalUrl;
+      renderTabs();
+      loadTabContent(tab);
+    }
+
+    function addTab(initialUrl = "") {
+      const tab = {
+        id: crypto.randomUUID(),
+        title: initialUrl ? new URL(normalizeInput(initialUrl)).hostname : "تبويب جديد",
+        currentUrl: initialUrl,
+        history: initialUrl ? [normalizeInput(initialUrl)] : [],
+        historyIndex: initialUrl ? 0 : -1
+      };
+      tabs.push(tab);
+      switchTab(tab.id);
+    }
+
+    function closeTab(id) {
+      if (tabs.length === 1) {
+        tabs[0].currentUrl = "";
+        tabs[0].title = "تبويب جديد";
+        tabs[0].history = [];
+        tabs[0].historyIndex = -1;
+        switchTab(tabs[0].id);
+        return;
+      }
+      const idx = tabs.findIndex(t => t.id === id);
+      tabs.splice(idx, 1);
+      if (activeTabId === id) {
+        const next = tabs[Math.max(0, idx - 1)];
+        switchTab(next.id);
+      } else {
+        renderTabs();
+      }
+    }
+
+    newTabBtn.onclick = () => addTab();
+
+    urlForm.onsubmit = (e) => {
+      e.preventDefault();
+      navigateTo(urlInput.value);
+    };
+
+    document.getElementById("backBtn").onclick = () => {
+      const tab = getActiveTab();
+      if (!tab || tab.historyIndex <= 0) return;
+      tab.historyIndex--;
+      tab.currentUrl = tab.history[tab.historyIndex];
+      urlInput.value = tab.currentUrl;
+      loadTabContent(tab);
+    };
+
+    document.getElementById("forwardBtn").onclick = () => {
+      const tab = getActiveTab();
+      if (!tab || tab.historyIndex >= tab.history.length - 1) return;
+      tab.historyIndex++;
+      tab.currentUrl = tab.history[tab.historyIndex];
+      urlInput.value = tab.currentUrl;
+      loadTabContent(tab);
+    };
+
+    document.getElementById("reloadBtn").onclick = () => {
+      const tab = getActiveTab();
+      if (tab) loadTabContent(tab);
+    };
+
+    document.getElementById("homeBtn").onclick = () => {
+      const tab = getActiveTab();
+      if (!tab) return;
+      tab.currentUrl = "";
+      tab.title = "تبويب جديد";
+      urlInput.value = "";
+      renderTabs();
+      loadTabContent(tab);
+    };
+
+    document.getElementById("addBookmarkBtn").onclick = () => {
+      const tab = getActiveTab();
+      if (!tab || !tab.currentUrl) return;
+      const title = prompt("اسم الإشارة المرجعية:", tab.title || tab.currentUrl);
+      if (!title) return;
+      bookmarks.push({ title, url: tab.currentUrl });
+      localStorage.setItem("gh_browser_bookmarks", JSON.stringify(bookmarks));
+      renderBookmarks();
+    };
+
+    browserFrame.onload = () => {
+      const tab = getActiveTab();
+      if (tab && tab.currentUrl) {
+        statusText.textContent = "تم التحميل: " + tab.currentUrl;
+      }
+    };
+
+    renderBookmarks();
+    addTab();
+  </script>
+</body>
+</html>
